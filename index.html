@@ -401,56 +401,101 @@
       applyFilters();
     }
 
-    // Load CSV and populate table (auto on page load)
-    async function loadCsvIntoTable() {
-      if (!CSV_URL || CSV_URL.includes("PASTE_YOUR_PUBLISHED_CSV_URL_HERE")) {
-        setStatus("Set CSV_URL inside index.html first.", "error");
-        table.replaceData([]);
-        table.updateOrAddData([], true);
-        table.setPlaceholder("Set CSV_URL in index.html to load data.");
-        return;
+// Load CSV and populate table (auto on page load)
+// Fixes flaky "sometimes only first row" by cache-busting + retrying and keeping best result.
+async function loadCsvIntoTable() {
+  if (!CSV_URL) {
+    setStatus("CSV_URL is empty.", "error");
+    table.setData([]);
+    return;
+  }
+
+  setStatus("Loading…", "");
+
+  // Build a cache-busted URL (defeats browser/edge caching)
+  const base = new URL(CSV_URL);
+  base.searchParams.set("_cb", Date.now().toString());
+
+  let bestParsed = null;
+  let bestRaw = [];
+  let bestHeaders = [];
+
+  // Try a few times; sometimes Google/edge gives a stale/partial CSV
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const u = new URL(base.toString());
+      u.searchParams.set("_try", String(attempt));
+
+      const res = await fetch(u.toString(), {
+        cache: "no-store",
+        headers: {
+          "cache-control": "no-cache, no-store, max-age=0",
+          "pragma": "no-cache",
+        },
+      });
+
+      if (!res.ok) throw new Error("HTTP " + res.status);
+
+      const csvText = await res.text();
+
+      const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+      const raw = (parsed.data || []).filter(row =>
+        Object.values(row || {}).some(v => String(v ?? "").trim() !== "")
+      );
+
+      const headers = (parsed.meta && parsed.meta.fields) ? parsed.meta.fields : Object.keys(raw[0] || {});
+
+      // Keep the best (largest) dataset we saw across attempts
+      if (raw.length > bestRaw.length) {
+        bestParsed = parsed;
+        bestRaw = raw;
+        bestHeaders = headers;
       }
 
-      setStatus("Loading…", "");
-      try {
-        const res = await fetch(CSV_URL, { cache: "no-store" });
-        if (!res.ok) throw new Error("HTTP " + res.status);
+      // If we already got 2+ rows, that's likely good enough — stop early
+      if (bestRaw.length >= 2) break;
 
-        const csvText = await res.text();
-        const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
-
-        const raw = parsed.data || [];
-        const headers = (parsed.meta && parsed.meta.fields) ? parsed.meta.fields : Object.keys(raw[0] || {});
-
-        // Try to auto-detect columns by header text (robust vs typos like "Prefered")
-        const cols = {
-          name:     findCol(headers, ["character", "name"]) || findCol(headers, ["name"]),
-          leveling: findCol(headers, ["leveling"]),
-          roles:    findCol(headers, ["roles"]),
-          start:    findCol(headers, ["start", "time"]),
-          end:      findCol(headers, ["end", "time"]),
-        };
-
-        // Basic validation
-        if (!cols.name || !cols.leveling || !cols.roles || !cols.start || !cols.end) {
-          console.log("Detected headers:", headers);
-          console.log("Detected cols:", cols);
-          setStatus("Could not detect required columns. Check your Sheet headers.", "error");
-          table.setPlaceholder("Column detection failed. Open DevTools console for details.");
-          return;
-        }
-
-        const normalized = raw.map(r => normalizeRow(r, cols)).filter(r => r.name);
-
-        table.setData(normalized);
-        applyFilters();
-        setStatus(`Loaded ${normalized.length} entries.`, "ok");
-      } catch (e) {
-        console.error(e);
-        setStatus("Failed to load CSV. Check that the sheet is published as CSV and link is correct.", "error");
-        table.setPlaceholder("Failed to load CSV.");
-      }
+      // small delay before retry
+      await new Promise(r => setTimeout(r, 150 * attempt));
+    } catch (e) {
+      // retry
+      await new Promise(r => setTimeout(r, 150 * attempt));
     }
+  }
+
+  try {
+    if (!bestRaw.length) throw new Error("Empty/partial CSV after retries");
+
+    const headers = bestHeaders;
+
+    // Try to auto-detect columns by header text
+    const cols = {
+      name:     findCol(headers, ["character", "name"]) || findCol(headers, ["name"]),
+      leveling: findCol(headers, ["leveling"]),
+      roles:    findCol(headers, ["roles"]),
+      start:    findCol(headers, ["start", "time"]),
+      end:      findCol(headers, ["end", "time"]),
+    };
+
+    if (!cols.name || !cols.leveling || !cols.roles || !cols.start || !cols.end) {
+      console.log("Detected headers:", headers);
+      console.log("Detected cols:", cols);
+      setStatus("Could not detect required columns. Check your Sheet headers.", "error");
+      table.setPlaceholder("Column detection failed. Open DevTools console for details.");
+      return;
+    }
+
+    const normalized = bestRaw.map(r => normalizeRow(r, cols)).filter(r => r.name);
+
+    table.setData(normalized);
+    applyFilters();
+    setStatus(`Loaded ${normalized.length} entries.`, "ok");
+  } catch (e) {
+    console.error(e);
+    setStatus("Failed to load CSV (stale/partial cached response). Refresh again.", "error");
+    table.setPlaceholder("Failed to load CSV.");
+  }
+}
 
     // Wire UI
     document.getElementById("clearBtn").addEventListener("click", clearFilters);
