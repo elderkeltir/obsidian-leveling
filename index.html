@@ -8,196 +8,187 @@
   <!-- Tabulator (table UI: sorting, filtering, etc.) -->
   <link href="https://unpkg.com/tabulator-tables@6.2.5/dist/css/tabulator.min.css" rel="stylesheet">
 
-  <style>
-    :root { color-scheme: dark; }
-    * { box-sizing: border-box; }
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
 
-    body {
-      margin: 0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      background: #0b1020;
-      color: #e7eaf3;
-    }
+  body {
+    margin: 0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    background: #0b1020;
+    color: #e7eaf3;
+  }
 
-    header {
-      padding: 18px 18px 10px;
-      border-bottom: 1px solid rgba(255,255,255,.08);
-      background: linear-gradient(180deg, rgba(255,255,255,.06), transparent);
-    }
-    h1 { margin: 0 0 6px; font-size: 18px; font-weight: 700; }
-    .sub { opacity: .8; font-size: 13px; }
+  header {
+    padding: 18px 18px 10px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    background: linear-gradient(180deg, rgba(255,255,255,.06), transparent);
+  }
 
-    .wrap { padding: 14px 18px 24px; max-width: 1200px; margin: 0 auto; }
+  h1 { margin: 0 0 6px; font-size: 18px; font-weight: 700; }
+  .sub { opacity: .8; font-size: 13px; }
 
-    .panel {
-      padding: 12px;
-      border: 1px solid rgba(255,255,255,.10);
-      border-radius: 12px;
-      background: rgba(255,255,255,.04);
-      margin-bottom: 12px;
-    }
+  .wrap { padding: 14px 18px 24px; max-width: 1200px; margin: 0 auto; }
 
-    /* Responsive layout that won't overlap:
-       auto-fit creates as many columns as fit, min width 260px, otherwise stacks */
-    .controls {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 12px;
-      align-items: start;
-    }
+  .panel {
+    padding: 12px;
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 12px;
+    background: rgba(255,255,255,.04);
+    margin-bottom: 12px;
+  }
 
-    .control {
-      padding: 10px;
-      border: 1px solid rgba(255,255,255,.10);
-      border-radius: 12px;
-      background: rgba(0,0,0,.18);
-    }
+  /* Responsive layout that won't overlap */
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+    align-items: start;
+  }
 
-    label {
-      display: block;
-      font-size: 12px;
-      opacity: .85;
-      margin: 0 0 8px;
-    }
+  .control {
+    padding: 10px;
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 12px;
+    background: rgba(0,0,0,.18);
+  }
 
-    input[type="text"], input[type="time"] {
-      width: 100%;
-      padding: 10px 10px;
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,.14);
-      background: rgba(0,0,0,.25);
-      color: #e7eaf3;
-      outline: none;
-    }
+  label {
+    display: block;
+    font-size: 12px;
+    opacity: .85;
+    margin: 0 0 8px;
+  }
 
-    .checks {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px 14px;
-      align-items: center;
-    }
-    .checks .item {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      user-select: none;
-      white-space: nowrap;
-    }
+  input[type="text"], input[type="time"] {
+    width: 100%;
+    padding: 10px 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(0,0,0,.25);
+    color: #e7eaf3;
+    outline: none;
+  }
 
-    .actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-      margin-top: 10px;
-    }
+  .checks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+    align-items: center;
+  }
 
-    button {
-      padding: 10px 12px;
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,.16);
-      background: rgba(255,255,255,.06);
-      color: #e7eaf3;
-      cursor: pointer;
-    }
-    button:hover { background: rgba(255,255,255,.10); }
+  .checks .item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    user-select: none;
+    white-space: nowrap;
+  }
 
-    .hint { font-size: 12px; opacity: .75; }
-    .error { color: #ffb4b4; }
-    .ok { color: #b7ffcf; }
+  .actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 10px;
+  }
 
-    /* Table container height: fill most of viewport, no weird whitespace */
-    #table {
-      height: calc(100vh - 290px);
-      min-height: 420px;
-      border: 1px solid rgba(255,255,255,.10);
-      border-radius: 12px;
-      overflow: hidden;
-      background: rgba(255,255,255,.02);
-    }
+  button {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,.16);
+    background: rgba(255,255,255,.06);
+    color: #e7eaf3;
+    cursor: pointer;
+  }
+  button:hover { background: rgba(255,255,255,.10); }
 
-    /* Make Tabulator match dark UI a bit */
-    .tabulator { background: transparent; }
-    .tabulator .tabulator-header {
-      background: rgba(255,255,255,.04);
-      border-bottom: 1px solid rgba(255,255,255,.10);
-    }
-    .tabulator .tabulator-row {
-      background: transparent;
-      border-bottom: 1px solid rgba(255,255,255,.06);
-    }
-    .tabulator .tabulator-row:hover { background: rgba(255,255,255,.05); }
-    .tabulator .tabulator-cell { border-right: 1px solid rgba(255,255,255,.05); }
+  .hint { font-size: 12px; opacity: .75; }
+  .error { color: #ffb4b4; }
+  .ok { color: #b7ffcf; }
 
-    @media (max-width: 520px) {
-      #table { height: calc(100vh - 330px); }
-    }
+  /* Table container */
+  #table {
+    height: calc(100vh - 290px);
+    min-height: 420px;
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 12px;
+    overflow: hidden;
+    background: #0d1428; /* solid dark (IMPORTANT) */
+  }
 
-    #table { background: rgba(0,0,0,.12); }
+  @media (max-width: 520px) {
+    #table { height: calc(100vh - 330px); }
+  }
 
-.tabulator{
-  background: transparent !important;
-  color: #e7eaf3 !important;
-  border: 1px solid rgba(255,255,255,.10) !important;
-}
+  /* ===== Tabulator: real dark theme overrides ===== */
+  .tabulator{
+    background: #0d1428 !important;         /* solid base */
+    color: #e7eaf3 !important;
+    border: none !important;                /* we already have #table border */
+    font-size: 14px;
+  }
 
-.tabulator .tabulator-header{
-  background: rgba(255,255,255,.05) !important;
-  border-bottom: 1px solid rgba(255,255,255,.10) !important;
-  color: #e7eaf3 !important;
-}
+  .tabulator .tabulator-header{
+    background: #101a33 !important;
+    color: #e7eaf3 !important;
+    border-bottom: 1px solid rgba(255,255,255,.10) !important;
+  }
 
-.tabulator .tabulator-header .tabulator-col{
-  background: transparent !important;
-  border-right: 1px solid rgba(255,255,255,.08) !important;
-}
+  .tabulator .tabulator-header .tabulator-col{
+    background: #101a33 !important;
+    border-right: 1px solid rgba(255,255,255,.08) !important;
+  }
 
-.tabulator .tabulator-header .tabulator-col .tabulator-col-content{
-  padding: 10px 10px !important;
-}
+  .tabulator .tabulator-header .tabulator-col .tabulator-col-content{
+    padding: 10px 10px !important;
+  }
 
-.tabulator .tabulator-tableholder{
-  background: transparent !important;
-}
+  .tabulator .tabulator-tableholder{
+    background: #0d1428 !important;
+  }
 
-.tabulator .tabulator-row{
-  background: rgba(0,0,0,.12) !important;
-  border-bottom: 1px solid rgba(255,255,255,.06) !important;
-}
+  .tabulator .tabulator-table{
+    background: #0d1428 !important;
+  }
 
-.tabulator .tabulator-row:nth-child(even){
-  background: rgba(255,255,255,.03) !important;
-}
+  .tabulator .tabulator-row{
+    background: #0f1830 !important; /* solid row */
+    border-bottom: 1px solid rgba(255,255,255,.06) !important;
+  }
 
-.tabulator .tabulator-row:hover{
-  background: rgba(255,255,255,.06) !important;
-}
+  .tabulator .tabulator-row:nth-child(even){
+    background: #0d1428 !important;
+  }
 
-.tabulator .tabulator-cell{
-  border-right: 1px solid rgba(255,255,255,.06) !important;
-  color: #e7eaf3 !important;
-}
+  .tabulator .tabulator-row:hover{
+    background: #142044 !important;
+  }
 
-/* Optional: make the sort arrows visible on dark */
-.tabulator .tabulator-col.tabulator-sortable .tabulator-col-title-holder{
-  color: #e7eaf3 !important;
-}
-.tabulator .tabulator-col .tabulator-arrow{
-  border-bottom-color: rgba(231,234,243,.85) !important;
-  border-top-color: rgba(231,234,243,.85) !important;
-}
+  .tabulator .tabulator-cell{
+    background: transparent !important;
+    color: #e7eaf3 !important;
+    border-right: 1px solid rgba(255,255,255,.06) !important;
+  }
 
-/* Optional: selected row */
-.tabulator .tabulator-row.tabulator-selected{
-  background: rgba(120,160,255,.18) !important;
-}
-  </style>
+  /* Sort arrows visible on dark */
+  .tabulator .tabulator-col .tabulator-arrow{
+    border-bottom-color: rgba(231,234,243,.85) !important;
+    border-top-color: rgba(231,234,243,.85) !important;
+  }
+
+  /* Selected row */
+  .tabulator .tabulator-row.tabulator-selected{
+    background: #1a2a5a !important;
+  }
+</style>
+
 </head>
 
 <body>
   <header>
-    <h1>TBC Leveling Finder</h1>
+    <h1>&lt;Obsidian&gt;TBC Leveling Finder</h1>
     <div class="sub">Sortable + filterable table from Google Forms responses (CSV).</div>
   </header>
 
