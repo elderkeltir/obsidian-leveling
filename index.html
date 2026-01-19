@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TBC Leveling Finder</title>
+
+  <!-- Tabulator (table UI: sorting, filtering, etc.) -->
+  <link href="https://unpkg.com/tabulator-tables@6.2.5/dist/css/tabulator.min.css" rel="stylesheet">
+
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background: #0b1020;
+      color: #e7eaf3;
+    }
+    header {
+      padding: 18px 18px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), transparent);
+    }
+    h1 { margin: 0 0 6px; font-size: 18px; font-weight: 700; }
+    .sub { opacity: .8; font-size: 13px; }
+
+    .wrap { padding: 14px 18px 24px; max-width: 1200px; margin: 0 auto; }
+    .panel {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 12px;
+      background: rgba(255,255,255,.04);
+      margin-bottom: 12px;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 10px;
+      align-items: end;
+    }
+    .field { grid-column: span 12; }
+    @media (min-width: 900px) {
+      .field.sm-3 { grid-column: span 3; }
+      .field.sm-4 { grid-column: span 4; }
+      .field.sm-6 { grid-column: span 6; }
+      .field.sm-2 { grid-column: span 2; }
+    }
+    label { display: block; font-size: 12px; opacity: .85; margin: 0 0 6px; }
+    input[type="text"], input[type="time"] {
+      width: 100%;
+      padding: 10px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.25);
+      color: #e7eaf3;
+      outline: none;
+    }
+    .checks { display:flex; gap: 10px; flex-wrap: wrap; }
+    .checks label { margin:0; opacity:1; font-size: 13px; display:flex; align-items:center; gap:8px; }
+    .btns { display:flex; gap:10px; flex-wrap: wrap; }
+    button {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      color: #e7eaf3;
+      cursor: pointer;
+    }
+    button:hover { background: rgba(255,255,255,.10); }
+
+    #table {
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(255,255,255,.02);
+    }
+    .hint { font-size: 12px; opacity: .75; margin-top: 8px; }
+    .error { color: #ffb4b4; }
+    .ok { color: #b7ffcf; }
+
+    /* Make Tabulator match dark UI a bit */
+    .tabulator { background: transparent; }
+    .tabulator .tabulator-header { background: rgba(255,255,255,.04); border-bottom: 1px solid rgba(255,255,255,.10); }
+    .tabulator .tabulator-row { background: transparent; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .tabulator .tabulator-row:hover { background: rgba(255,255,255,.05); }
+    .tabulator .tabulator-cell { border-right: 1px solid rgba(255,255,255,.05); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>TBC Leveling Finder</h1>
+    <div class="sub">Sortable + filterable table from Google Forms responses (CSV).</div>
+  </header>
+
+  <div class="wrap">
+    <div class="panel">
+      <div class="row">
+        <div class="field sm-6">
+          <label>Google Sheet CSV “Publish to web” URL</label>
+          <input id="csvUrl" type="text" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?gid=0&single=true&output=csv" />
+          <div class="hint">Tip: If you don’t want a public sheet, you can instead host a CSV file in this repo and paste its raw URL.</div>
+        </div>
+
+        <div class="field sm-2">
+          <label>Need from</label>
+          <input id="needStart" type="time" value="21:00" />
+        </div>
+        <div class="field sm-2">
+          <label>Need until</label>
+          <input id="needEnd" type="time" value="23:00" />
+        </div>
+
+        <div class="field sm-2">
+          <label>Match mode</label>
+          <div class="checks">
+            <label><input type="checkbox" id="partialOverlap" />Any overlap</label>
+          </div>
+          <div class="hint">Off = must fully cover your window.</div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field sm-6">
+          <label>Search (name / roles / leveling)</label>
+          <input id="search" type="text" placeholder="e.g. Kethra, Tank, Questing..." />
+        </div>
+
+        <div class="field sm-3">
+          <label>Leveling</label>
+          <div class="checks">
+            <label><input type="checkbox" id="wantDungeon" checked />Dungeon</label>
+            <label><input type="checkbox" id="wantQuesting" checked />Questing</label>
+          </div>
+        </div>
+
+        <div class="field sm-3">
+          <label>Roles (any checked)</label>
+          <div class="checks">
+            <label><input type="checkbox" id="needTank" />Tank</label>
+            <label><input type="checkbox" id="needHeal" />Heal</label>
+            <label><input type="checkbox" id="needDps" />DPS</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="btns">
+        <button id="loadBtn">Load / Refresh</button>
+        <button id="clearBtn">Clear filters</button>
+        <span id="status" class="hint"></span>
+      </div>
+    </div>
+
+    <div id="table"></div>
+    <div class="hint">
+      Handles “end after midnight” (e.g. 20:00 → 00:00) by treating end as next day.
+    </div>
+  </div>
+
+  <!-- CSV parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <!-- Tabulator -->
+  <script src="https://unpkg.com/tabulator-tables@6.2.5/dist/js/tabulator.min.js"></script>
+
+  <script>
+    // ---- Update these if your sheet headers differ ----
+    const COL_NAME   = "Character Name";
+    const COL_LEVEL  = "Prefered way of leveling"; // note: your screenshot shows "Prefered"
+    const COL_ROLES  = "Roles you can fill in Dungeon group";
+    const COL_START  = "Typical weekday START time";
+    const COL_END    = "Typical weekday END time";
+
+    // ---- Helpers ----
+    function timeToMinutes(t) {
+      if (!t) return null;
+      // Accept "HH:MM" or "HH:MM:SS"
+      const parts = t.split(":").map(x => parseInt(x, 10));
+      if (parts.length < 2 || Number.isNaN(parts[0]) || Number.isNaN(parts[1])) return null;
+      return parts[0] * 60 + parts[1];
+    }
+
+    function normalizeRow(r) {
+      const leveling = (r[COL_LEVEL] || "").toString();
+      const roles    = (r[COL_ROLES] || "").toString();
+
+      const startMin = timeToMinutes((r[COL_START] || "").toString());
+      const endMin0  = timeToMinutes((r[COL_END] || "").toString());
+
+      // Adjust for after-midnight ranges: end < start => end + 24h
+      let endMin = endMin0;
+      if (startMin != null && endMin0 != null && endMin0 < startMin) endMin = endMin0 + 24*60;
+
+      return {
+        name: r[COL_NAME] || "",
+        leveling,
+        roles,
+        start: r[COL_START] || "",
+        end: r[COL_END] || "",
+        startMin,
+        endMin,
+
+        hasDungeon: /Dungeon/i.test(leveling),
+        hasQuesting: /Questing/i.test(leveling),
+
+        roleTank: /Tank/i.test(roles),
+        roleHeal: /Heal/i.test(roles),
+        roleDps: /DPS/i.test(roles),
+      };
+    }
+
+    function setStatus(msg, cls) {
+      const el = document.getElementById("status");
+      el.textContent = msg || "";
+      el.className = "hint " + (cls || "");
+    }
+
+    // ---- Table ----
+    let table = new Tabulator("#table", {
+      height: "650px",
+      layout: "fitColumns",
+      placeholder: "Load data to see results…",
+      reactiveData: true,
+      columns: [
+        {title: "Name", field: "name", sorter: "string", widthGrow: 1.2},
+        {title: "Leveling", field: "leveling", sorter: "string", widthGrow: 2},
+        {title: "Roles", field: "roles", sorter: "string", widthGrow: 1.4},
+        {title: "Start", field: "start", sorter: "string", hozAlign:"center", width: 110},
+        {title: "End", field: "end", sorter: "string", hozAlign:"center", width: 110},
+        {title: "Dungeon", field: "hasDungeon", sorter:"boolean", hozAlign:"center", width: 110, formatter:"tickCross"},
+        {title: "Questing", field: "hasQuesting", sorter:"boolean", hozAlign:"center", width: 110, formatter:"tickCross"},
+        {title: "Tank", field: "roleTank", sorter:"boolean", hozAlign:"center", width: 90, formatter:"tickCross"},
+        {title: "Heal", field: "roleHeal", sorter:"boolean", hozAlign:"center", width: 90, formatter:"tickCross"},
+        {title: "DPS", field: "roleDps", sorter:"boolean", hozAlign:"center", width: 90, formatter:"tickCross"},
+      ],
+    });
+
+    // Custom filter function using UI state
+    function applyFilters() {
+      const q = document.getElementById("search").value.trim().toLowerCase();
+
+      const wantDungeon = document.getElementById("wantDungeon").checked;
+      const wantQuesting = document.getElementById("wantQuesting").checked;
+
+      const needTank = document.getElementById("needTank").checked;
+      const needHeal = document.getElementById("needHeal").checked;
+      const needDps  = document.getElementById("needDps").checked;
+
+      const partialOverlap = document.getElementById("partialOverlap").checked;
+
+      const needStart = timeToMinutes(document.getElementById("needStart").value);
+      const needEnd0  = timeToMinutes(document.getElementById("needEnd").value);
+
+      // If user sets a window that crosses midnight (e.g. 23:00 → 01:00), treat end as next day.
+      let needEnd = needEnd0;
+      if (needStart != null && needEnd0 != null && needEnd0 < needStart) needEnd = needEnd0 + 24*60;
+
+      table.setFilter(function(rowData) {
+        // Text search
+        if (q) {
+          const hay = (rowData.name + " " + rowData.leveling + " " + rowData.roles).toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+
+        // Leveling preferences
+        const levelingOk = (wantDungeon && rowData.hasDungeon) || (wantQuesting && rowData.hasQuesting);
+        if (!levelingOk) return false;
+
+        // Roles: if any role checkbox checked, match ANY of them
+        const anyRoleChecked = needTank || needHeal || needDps;
+        if (anyRoleChecked) {
+          const roleOk = (needTank && rowData.roleTank) || (needHeal && rowData.roleHeal) || (needDps && rowData.roleDps);
+          if (!roleOk) return false;
+        }
+
+        // Time window
+        if (needStart != null && needEnd != null && rowData.startMin != null && rowData.endMin != null) {
+          if (partialOverlap) {
+            // overlap: start < needEnd AND end > needStart
+            if (!(rowData.startMin < needEnd && rowData.endMin > needStart)) return false;
+          } else {
+            // full cover: start <= needStart AND end >= needEnd
+            if (!(rowData.startMin <= needStart && rowData.endMin >= needEnd)) return false;
+          }
+        }
+
+        return true;
+      });
+    }
+
+    function clearFilters() {
+      document.getElementById("search").value = "";
+      document.getElementById("wantDungeon").checked = true;
+      document.getElementById("wantQuesting").checked = true;
+      document.getElementById("needTank").checked = false;
+      document.getElementById("needHeal").checked = false;
+      document.getElementById("needDps").checked = false;
+      document.getElementById("partialOverlap").checked = false;
+      document.getElementById("needStart").value = "21:00";
+      document.getElementById("needEnd").value = "23:00";
+      applyFilters();
+    }
+
+    // Load CSV and populate table
+    async function loadCsvIntoTable() {
+      const url = document.getElementById("csvUrl").value.trim();
+      if (!url) {
+        setStatus("Paste your published CSV URL first.", "error");
+        return;
+      }
+
+      setStatus("Loading…", "");
+      try {
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+
+        const csvText = await res.text();
+        const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+
+        if (parsed.errors && parsed.errors.length) {
+          console.warn(parsed.errors);
+        }
+
+        const raw = parsed.data || [];
+        const normalized = raw.map(normalizeRow).filter(r => r.name);
+
+        table.setData(normalized);
+        applyFilters();
+        setStatus(`Loaded ${normalized.length} entries.`, "ok");
+      } catch (e) {
+        console.error(e);
+        setStatus("Failed to load CSV. Check URL and that the sheet is published as CSV.", "error");
+      }
+    }
+
+    // Wire UI
+    document.getElementById("loadBtn").addEventListener("click", loadCsvIntoTable);
+    document.getElementById("clearBtn").addEventListener("click", clearFilters);
+
+    ["search","wantDungeon","wantQuesting","needTank","needHeal","needDps","partialOverlap","needStart","needEnd"]
+      .forEach(id => document.getElementById(id).addEventListener("input", applyFilters));
+
+    // Optional: auto-load if you hardcode csvUrl value or keep it in localStorage
+    document.getElementById("csvUrl").value = localStorage.getItem("tbc_csv_url") || "";
+    document.getElementById("csvUrl").addEventListener("change", (e) => {
+      localStorage.setItem("tbc_csv_url", e.target.value.trim());
+    });
+  </script>
+</body>
+</html>
