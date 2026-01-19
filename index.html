@@ -208,11 +208,11 @@
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
             <div>
               <label style="margin:0 0 6px; opacity:.75;">Need from</label>
-              <input id="needStart" type="time" value="21:00" />
+              <input id="needStart" type="time" value="" />
             </div>
             <div>
               <label style="margin:0 0 6px; opacity:.75;">Need until</label>
-              <input id="needEnd" type="time" value="23:00" />
+              <input id="needEnd" type="time" value="" />
             </div>
           </div>
           <div class="checks" style="margin-top:10px;">
@@ -396,8 +396,8 @@
       document.getElementById("needHeal").checked = false;
       document.getElementById("needDps").checked = false;
       document.getElementById("partialOverlap").checked = false;
-      document.getElementById("needStart").value = "21:00";
-      document.getElementById("needEnd").value = "23:00";
+      document.getElementById("needStart").value = "";
+      document.getElementById("needEnd").value = "";
       applyFilters();
     }
 
