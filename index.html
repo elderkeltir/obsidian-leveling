@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title><Obsidian>TBC Leveling Finder</title>
+  <title>&lt;Obsidian&gt;TBC Leveling Finder</title>
 
   <!-- Tabulator (table UI: sorting, filtering, etc.) -->
   <link href="https://unpkg.com/tabulator-tables@6.2.5/dist/css/tabulator.min.css" rel="stylesheet">
@@ -133,6 +133,65 @@
     @media (max-width: 520px) {
       #table { height: calc(100vh - 330px); }
     }
+
+    #table { background: rgba(0,0,0,.12); }
+
+.tabulator{
+  background: transparent !important;
+  color: #e7eaf3 !important;
+  border: 1px solid rgba(255,255,255,.10) !important;
+}
+
+.tabulator .tabulator-header{
+  background: rgba(255,255,255,.05) !important;
+  border-bottom: 1px solid rgba(255,255,255,.10) !important;
+  color: #e7eaf3 !important;
+}
+
+.tabulator .tabulator-header .tabulator-col{
+  background: transparent !important;
+  border-right: 1px solid rgba(255,255,255,.08) !important;
+}
+
+.tabulator .tabulator-header .tabulator-col .tabulator-col-content{
+  padding: 10px 10px !important;
+}
+
+.tabulator .tabulator-tableholder{
+  background: transparent !important;
+}
+
+.tabulator .tabulator-row{
+  background: rgba(0,0,0,.12) !important;
+  border-bottom: 1px solid rgba(255,255,255,.06) !important;
+}
+
+.tabulator .tabulator-row:nth-child(even){
+  background: rgba(255,255,255,.03) !important;
+}
+
+.tabulator .tabulator-row:hover{
+  background: rgba(255,255,255,.06) !important;
+}
+
+.tabulator .tabulator-cell{
+  border-right: 1px solid rgba(255,255,255,.06) !important;
+  color: #e7eaf3 !important;
+}
+
+/* Optional: make the sort arrows visible on dark */
+.tabulator .tabulator-col.tabulator-sortable .tabulator-col-title-holder{
+  color: #e7eaf3 !important;
+}
+.tabulator .tabulator-col .tabulator-arrow{
+  border-bottom-color: rgba(231,234,243,.85) !important;
+  border-top-color: rgba(231,234,243,.85) !important;
+}
+
+/* Optional: selected row */
+.tabulator .tabulator-row.tabulator-selected{
+  background: rgba(120,160,255,.18) !important;
+}
   </style>
 </head>
 
